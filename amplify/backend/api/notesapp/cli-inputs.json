@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "notesapp",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/Users/ayelenbravo/Dropbox/ESTUDIAR EN MADISON COLLEGE/SPRING_2022/Adv_Cloud_for_Developers/Week_7/notesapp/amplify/backend/api/notesapp/schema.graphql",
+    "defaultAuthType": {
+      "mode": "API_KEY",
+      "expirationTime": 365,
+      "apiKeyExpirationDate": "2023-03-07T00:27:57.573Z",
+      "keyDescription": "public"
+    }
+  }
+}
