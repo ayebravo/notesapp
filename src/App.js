@@ -1,10 +1,7 @@
-import logo from "./logo.svg";
-import "./App.css";
-
 import React, { useEffect, useReducer } from "react";
 import { API } from "aws-amplify";
 import { List } from "antd";
-import "antd/dist/antd.css";
+import "antd/dist/antd.min.css";
 import { listNotes } from "./graphql/queries";
 
 const initialState = {
@@ -49,23 +46,33 @@ const App = () => {
 		fetchNotes();
 	}, []);
 
+	const renderItem = (item) => {
+		return (
+			<List.Item style={styles.item}>
+				<List.Item.Meta
+					title={item.name}
+					description={item.description}
+				/>
+			</List.Item>
+		);
+	};
+
 	return (
-		<div className="App">
-			<header className="App-header">
-				<img src={logo} className="App-logo" alt="logo" />
-				<p>
-					Edit <code>src/App.js</code> and save to reload.
-				</p>
-				<a
-					className="App-link"
-					href="https://reactjs.org"
-					target="_blank"
-					rel="noopener noreferrer">
-					Learn React
-				</a>
-			</header>
+		<div style={styles.container}>
+			<List
+				loading={state.loading}
+				dataSource={state.notes}
+				renderItem={renderItem}
+			/>
 		</div>
 	);
+};
+
+const styles = {
+	container: { padding: 20 },
+	input: { marginBottom: 10 },
+	item: { textAlign: "left" },
+	p: { color: "#1890ff" },
 };
 
 export default App;
