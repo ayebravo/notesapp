@@ -10,7 +10,10 @@ import { v4 as uuid } from "uuid";
 
 // GraphQL
 import { listNotes } from "./graphql/queries";
-import { createNote as CreateNote } from "./graphql/mutations";
+import {
+	createNote as CreateNote,
+	deleteNote as DeleteNote,
+} from "./graphql/mutations";
 
 const CLIENT_ID = uuid();
 
@@ -21,6 +24,7 @@ const initialState = {
 	form: { name: "", description: "" },
 };
 
+// One function to change any state in my app
 const reducer = (state, action) => {
 	switch (action.type) {
 		case "SET_NOTES":
@@ -76,6 +80,29 @@ const App = () => {
 		}
 	};
 
+	const deleteNote = async (noteToDelete) => {
+		// Optimistically update state and screen
+		dispatch({
+			type: "SET_NOTES",
+			notes: state.notes.filter((x) => x !== noteToDelete),
+		});
+
+		// Then do the delete via GraphQL mutation
+		try {
+			await API.graphql({
+				query: DeleteNote,
+				variables: {
+					input: {
+						id: noteToDelete.id,
+					},
+				},
+			});
+			console.log("successfully deleted note!");
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
 	const onChange = (e) => {
 		dispatch({
 			type: "SET_INPUT",
@@ -105,7 +132,13 @@ const App = () => {
 
 	const renderItem = (item) => {
 		return (
-			<List.Item style={styles.item}>
+			<List.Item
+				style={styles.item}
+				actions={[
+					<p style={styles.p} onClick={() => deleteNote(item)}>
+						Delete
+					</p>,
+				]}>
 				<List.Item.Meta
 					title={item.name}
 					description={item.description}
