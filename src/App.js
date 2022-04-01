@@ -15,6 +15,7 @@ import {
 	deleteNote as DeleteNote,
 	updateNote as UpdateNote,
 } from "./graphql/mutations";
+import { onCreateNote } from "./graphql/subscriptions";
 
 const CLIENT_ID = uuid();
 
@@ -156,6 +157,20 @@ const App = () => {
 
 	useEffect(() => {
 		fetchNotes();
+		const subscription = API.graphql({
+			query: onCreateNote,
+		}).subscribe({
+			next: (noteData) => {
+				const note = noteData.value.data.onCreateNote;
+
+				if (CLIENT_ID === note.clientId) return; // If I (client - browser window) created the note, don't call dispatch
+
+				dispatch({ type: "ADD_NOTE", note: note });
+			},
+		});
+
+		// Pass a clean-up function to React
+		return () => subscription.unsubscribe();
 	}, []);
 
 	const renderItem = (item) => {
