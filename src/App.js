@@ -100,7 +100,7 @@ const App = () => {
 	};
 
 	const deleteNote = async (noteToDelete) => {
-		// Then do the delete via GraphQL mutation
+		// Delete via GraphQL mutation
 		try {
 			await API.graphql({
 				query: DeleteNote,
