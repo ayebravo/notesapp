@@ -86,9 +86,6 @@ const App = () => {
 			id: uuid(),
 		};
 
-		// Updating the local state before the API call is successful. This is known as an optimistic response. It is done because we want the UI to be fast and to update as soon as the user adds a new note.
-		dispatch({ type: "ADD_NOTE", note: note });
-
 		dispatch({ type: "RESET_FORM" });
 
 		try {
@@ -230,8 +227,6 @@ const App = () => {
 		}).subscribe({
 			next: (noteData) => {
 				const note = noteData.value.data.onCreateNote;
-
-				if (CLIENT_ID === note.clientId) return; // If I (client - browser window) created the note, don't call dispatch
 
 				dispatch({ type: "ADD_NOTE", note: note });
 			},
