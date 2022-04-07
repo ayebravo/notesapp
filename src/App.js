@@ -214,6 +214,12 @@ const App = () => {
 			<Button onClick={createNote} type="primary">
 				Create Note
 			</Button>
+			<hr />
+			<h3>
+				{state.notes.filter((note) => note.completed === true).length}{" "}
+				completed / {state.notes.length} total
+			</h3>
+			<hr />
 			<List
 				loading={state.loading}
 				dataSource={state.notes}
