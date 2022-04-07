@@ -247,7 +247,7 @@ const App = () => {
 
 		// Pass a clean-up function to React
 		return () => subscription.unsubscribe();
-	});
+	}, []);
 
 	const renderItem = (item) => {
 		return (
