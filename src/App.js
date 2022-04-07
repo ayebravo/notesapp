@@ -15,7 +15,7 @@ import {
 	deleteNote as DeleteNote,
 	updateNote as UpdateNote,
 } from "./graphql/mutations";
-import { onCreateNote } from "./graphql/subscriptions";
+import { onCreateNote, onDeleteNote } from "./graphql/subscriptions";
 
 const CLIENT_ID = uuid();
 
@@ -100,12 +100,6 @@ const App = () => {
 	};
 
 	const deleteNote = async (noteToDelete) => {
-		// Optimistically update state and screen
-		dispatch({
-			type: "SET_NOTES",
-			notes: state.notes.filter((x) => x !== noteToDelete),
-		});
-
 		// Then do the delete via GraphQL mutation
 		try {
 			await API.graphql({
@@ -235,6 +229,25 @@ const App = () => {
 		// Pass a clean-up function to React
 		return () => subscription.unsubscribe();
 	}, []);
+
+	useEffect(() => {
+		fetchNotes();
+		const subscription = API.graphql({
+			query: onDeleteNote,
+		}).subscribe({
+			next: (noteData) => {
+				const note = noteData.value.data.onDeleteNote;
+
+				dispatch({
+					type: "SET_NOTES",
+					notes: state.notes.filter((x) => x !== note),
+				});
+			},
+		});
+
+		// Pass a clean-up function to React
+		return () => subscription.unsubscribe();
+	});
 
 	const renderItem = (item) => {
 		return (
