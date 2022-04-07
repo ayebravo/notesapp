@@ -42,6 +42,26 @@ const reducer = (state, action) => {
 				...state,
 				form: { ...state.form, [action.name]: action.value },
 			};
+		case "ADD_EXCLAMATION":
+			return {
+				...state,
+				notes: state.notes.map((note) => {
+					if (note === action.noteToEmphasize) {
+						note.name = note.name.concat("!");
+					}
+					return note;
+				}),
+			};
+		case "REMOVE_EXCLAMATION":
+			return {
+				...state,
+				notes: state.notes.map((note) => {
+					if (note === action.noteToEmphasize) {
+						note.name = note.name.replace("!", "");
+					}
+					return note;
+				}),
+			};
 
 		default:
 			return {
@@ -140,6 +160,54 @@ const App = () => {
 		});
 	};
 
+	const addExclamationToName = async (noteToEmphasize) => {
+		// Update note's name optimistically
+		dispatch({
+			type: "ADD_EXCLAMATION",
+			noteToEmphasize: noteToEmphasize,
+		});
+
+		// Then call the backend
+		try {
+			await API.graphql({
+				query: UpdateNote,
+				variables: {
+					input: {
+						id: noteToEmphasize.id,
+						name: noteToEmphasize.name,
+					},
+				},
+			});
+			console.log("successfully added a ! to the note's name");
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
+	const removeExclamationFromName = async (noteToEmphasize) => {
+		// Update note's name optimistically
+		dispatch({
+			type: "REMOVE_EXCLAMATION",
+			noteToEmphasize: noteToEmphasize,
+		});
+
+		// Then call the backend
+		try {
+			await API.graphql({
+				query: UpdateNote,
+				variables: {
+					input: {
+						id: noteToEmphasize.id,
+						name: noteToEmphasize.name,
+					},
+				},
+			});
+			console.log("successfully removed a ! to the note's name");
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
 	const fetchNotes = async () => {
 		try {
 			const notesData = await API.graphql({
@@ -183,6 +251,16 @@ const App = () => {
 					</p>,
 					<p style={styles.p} onClick={() => updateNote(item)}>
 						{item.completed ? "Mark incomplete" : "Mark complete"}
+					</p>,
+					<p
+						style={styles.p}
+						onClick={() => addExclamationToName(item)}>
+						+!
+					</p>,
+					<p
+						style={styles.p}
+						onClick={() => removeExclamationFromName(item)}>
+						-!
 					</p>,
 				]}>
 				<List.Item.Meta
