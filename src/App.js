@@ -15,7 +15,11 @@ import {
 	deleteNote as DeleteNote,
 	updateNote as UpdateNote,
 } from "./graphql/mutations";
-import { onCreateNote, onDeleteNote } from "./graphql/subscriptions";
+import {
+	onCreateNote,
+	onDeleteNote,
+	onUpdateNote,
+} from "./graphql/subscriptions";
 
 const CLIENT_ID = uuid();
 
@@ -42,27 +46,28 @@ const reducer = (state, action) => {
 				...state,
 				form: { ...state.form, [action.name]: action.value },
 			};
-		case "ADD_EXCLAMATION":
+		case "DELETE_NOTE":
 			return {
 				...state,
-				notes: state.notes.map((note) => {
-					if (note === action.noteToEmphasize) {
-						note.name = note.name.concat("!");
-					}
-					return note;
-				}),
+				notes: state.notes.filter(
+					(x) => x.id !== action.noteIdToDelete
+				),
 			};
-		case "REMOVE_EXCLAMATION":
+		case "UPDATE_NOTE":
 			return {
 				...state,
-				notes: state.notes.map((note) => {
-					if (note === action.noteToEmphasize) {
-						note.name = note.name.replace("!", "");
-					}
-					return note;
-				}),
+				notes: state.notes.map((x) => ({
+					...x,
+					name:
+						x.id === action.noteIdToUpdate.id
+							? action.noteIdToUpdate.name
+							: x.name,
+					completed:
+						x.id === action.noteIdToUpdate.id
+							? action.noteIdToUpdate.completed
+							: x.completed,
+				})),
 			};
-
 		default:
 			return {
 				...state,
@@ -117,16 +122,6 @@ const App = () => {
 	};
 
 	const updateNote = async (noteToUpdate) => {
-		// Update the state and display optimistically
-		dispatch({
-			type: "SET_NOTES",
-			notes: state.notes.map((x) => ({
-				...x, // Spread current properties of the note
-				completed: x === noteToUpdate ? !x.completed : x.completed, // Set the completed property for all the notes but only toggle it for the noteToUpdate
-			})),
-		});
-
-		// Then call the backend
 		try {
 			await API.graphql({
 				query: UpdateNote,
@@ -151,21 +146,16 @@ const App = () => {
 		});
 	};
 
-	const addExclamationToName = async (noteToEmphasize) => {
-		// Update note's name optimistically
-		dispatch({
-			type: "ADD_EXCLAMATION",
-			noteToEmphasize: noteToEmphasize,
-		});
+	const addExclamationToName = async (noteToUpdate) => {
+		const nameWithOneMoreExclamation = (noteToUpdate.name += "!");
 
-		// Then call the backend
 		try {
 			await API.graphql({
 				query: UpdateNote,
 				variables: {
 					input: {
-						id: noteToEmphasize.id,
-						name: noteToEmphasize.name,
+						id: noteToUpdate.id,
+						name: nameWithOneMoreExclamation,
 					},
 				},
 			});
@@ -175,21 +165,16 @@ const App = () => {
 		}
 	};
 
-	const removeExclamationFromName = async (noteToEmphasize) => {
-		// Update note's name optimistically
-		dispatch({
-			type: "REMOVE_EXCLAMATION",
-			noteToEmphasize: noteToEmphasize,
-		});
+	const removeExclamationFromName = async (noteToUpdate) => {
+		const nameWithOneLessExclamation = (noteToUpdate.name -= "!");
 
-		// Then call the backend
 		try {
 			await API.graphql({
 				query: UpdateNote,
 				variables: {
 					input: {
-						id: noteToEmphasize.id,
-						name: noteToEmphasize.name,
+						id: noteToUpdate.id,
+						name: nameWithOneLessExclamation,
 					},
 				},
 			});
@@ -216,37 +201,49 @@ const App = () => {
 
 	useEffect(() => {
 		fetchNotes();
-		const subscription = API.graphql({
+
+		const createSubscription = API.graphql({
 			query: onCreateNote,
 		}).subscribe({
 			next: (noteData) => {
-				const note = noteData.value.data.onCreateNote;
+				const noteToCreate = noteData.value.data.onCreateNote;
 
-				dispatch({ type: "ADD_NOTE", note: note });
+				dispatch({ type: "ADD_NOTE", note: noteToCreate });
 			},
 		});
 
-		// Pass a clean-up function to React
-		return () => subscription.unsubscribe();
-	}, []);
-
-	useEffect(() => {
-		fetchNotes();
-		const subscription = API.graphql({
+		const deleteSubscription = API.graphql({
 			query: onDeleteNote,
 		}).subscribe({
 			next: (noteData) => {
-				const note = noteData.value.data.onDeleteNote;
+				const noteToDelete = noteData.value.data.onDeleteNote;
 
 				dispatch({
-					type: "SET_NOTES",
-					notes: state.notes.filter((x) => x !== note),
+					type: "DELETE_NOTE",
+					noteIdToDelete: noteToDelete.id,
+				});
+			},
+		});
+
+		const updateSubscription = API.graphql({
+			query: onUpdateNote,
+		}).subscribe({
+			next: (noteData) => {
+				const noteToUpdate = noteData.value.data.onUpdateNote;
+
+				dispatch({
+					type: "UPDATE_NOTE",
+					noteIdToUpdate: noteToUpdate.id,
 				});
 			},
 		});
 
 		// Pass a clean-up function to React
-		return () => subscription.unsubscribe();
+		return () => {
+			createSubscription.unsubscribe();
+			deleteSubscription.unsubscribe();
+			updateSubscription.unsubscribe();
+		};
 	}, []);
 
 	const renderItem = (item) => {
