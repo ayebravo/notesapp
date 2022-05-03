@@ -59,12 +59,12 @@ const reducer = (state, action) => {
 				notes: state.notes.map((x) => ({
 					...x,
 					name:
-						x.id === action.noteIdToUpdate.id
-							? action.noteIdToUpdate.name
+						x.id === action.noteToUpdate.id
+							? action.noteToUpdate.name
 							: x.name,
 					completed:
-						x.id === action.noteIdToUpdate.id
-							? action.noteIdToUpdate.completed
+						x.id === action.noteToUpdate.id
+							? action.noteToUpdate.completed
 							: x.completed,
 				})),
 			};
@@ -166,7 +166,7 @@ const App = () => {
 	};
 
 	const removeExclamationFromName = async (noteToUpdate) => {
-		const nameWithOneLessExclamation = (noteToUpdate.name -= "!");
+		const nameWithOneLessExclamation = noteToUpdate.name.replace("!", "");
 
 		try {
 			await API.graphql({
@@ -233,7 +233,7 @@ const App = () => {
 
 				dispatch({
 					type: "UPDATE_NOTE",
-					noteIdToUpdate: noteToUpdate.id,
+					noteToUpdate: noteToUpdate,
 				});
 			},
 		});
